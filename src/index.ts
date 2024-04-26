@@ -57,187 +57,263 @@ app.get("/data", async (req, res) => {
     console.log(error);
   }
 });
-
-app.get("/insert-many", async (req, res) => {
+app.get("/data/:id", async (req, res) => {
+  const id = req.params.id;
   try {
-    const filePath = "./data/20240129_Equity_Sample1.txt";
-    const chunkSize = 2000; // Adjust the chunk size as needed
+    const data = await equityModel.findById(id);
 
-    // Function to process a chunk of lines
-    async function processChunk(chunk) {
-      const finalData = [];
-
-      // Assuming the first line contains headers
-      const headers = chunk[0].split("|");
-
-      for (let i = 1; i < chunk.length; i++) {
-        const line = chunk[i];
-        const data = line.split("|");
-        const obj = {};
-        for (let j = 0; j < headers.length; j++) {
-          obj[headers[j]] = data[j];
-        }
-        finalData.push(obj);
-      }
-
-      try {
-        await equityModel.insertMany(finalData);
-      } catch (error) {
-        console.error("Error inserting data:", error);
-        throw error;
-      }
-    }
-
-    // Function to read file in chunks
-    async function processFile() {
-      let chunk = [];
-      let lineCount = 0;
-
-      const stream = fs.createReadStream(filePath, { encoding: "utf-8" });
-      const rl = readline.createInterface({ input: stream });
-
-      rl.on("line", (line) => {
-        chunk.push(line);
-        lineCount++;
-
-        if (lineCount === chunkSize) {
-          processChunk(chunk)
-            .then(() => {
-              chunk = [];
-              lineCount = 0;
-            })
-            .catch((error) => {
-              rl.close();
-            });
-        }
-      });
-
-      rl.on("close", () => {
-        if (chunk.length > 0) {
-          processChunk(chunk).catch((error) => {
-            console.log("on close error ---->", error);
-          });
-        }
-      });
-    }
-
-    // Call the function to start processing the file
-    processFile()
-      .then(() => {
-        console.log("Data inserted successfully");
-        // Send response or perform any other action
-        res.status(200).json({
-          success: true,
-          message: "Data inserted successfully ♪..♫..♪..♫",
-        });
-      })
-      .catch((error) => {
-        console.error("Error processing file:", error);
-        // Send error response or perform any other action
-      });
+    res.status(200).json({
+      success: true,
+      message: "Data fechted successfully ♪..♫..♪..♫",
+      data,
+    });
   } catch (error) {
     console.log(error);
   }
 });
-
-app.get("/insert-many-2", async (req, res) => {
+app.get("/property/:id", async (req, res) => {
+  const id = req.params.id;
   try {
-    const filePath = "./data/20240129_Equity_Sample1.txt";
-    const chunkSize = 5000; // Increased chunk size
-    const batchSize = 1000; // Batch size for bulk operations
+    const data = await equityModel
+      .find({ PropertyID: id })
+      .skip(40000)
+      .limit(100);
 
-    const stream = fs.createReadStream(filePath, { encoding: "utf-8" });
-    const rl = readline.createInterface({ input: stream });
-
-    let chunk = [];
-    let lineCount = 0;
-
-    rl.on("line", async (line) => {
-      chunk.push(line);
-      lineCount++;
-
-      if (lineCount === chunkSize) {
-        // Process chunk asynchronously
-        await processChunk([...chunk]); // passing a copy of chunk
-        chunk = [];
-        lineCount = 0;
-      }
+    res.status(200).json({
+      success: true,
+      message: "Data fechted successfully ♪..♫..♪..♫",
+      data,
     });
-
-    rl.on("close", async () => {
-      if (chunk.length > 0) {
-        await processChunk([...chunk]); // passing a copy of chunk
-      }
-      console.log("Data insertion completed");
-      res
-        .status(200)
-        .json({ success: true, message: "Data inserted successfully" });
-    });
-
-    //-----------------------------------------
-    // async function processChunk(chunk) {
-    //   const finalData = [];
-    //   const headers = chunk.shift().split("|"); // Remove and process the headers
-
-    //   for (let i = 0; i < chunk.length; i++) {
-    //     const data = chunk[i].split("|");
-    //     const obj = {};
-    //     for (let j = 0; j < headers.length; j++) {
-    //       obj[headers[j]] = data[j];
-    //     }
-    //     finalData.push(obj);
-    //   }
-
-    //   const bulkOperations = [];
-
-    //   // Split finalData into batches for bulk operations
-    //   for (let i = 0; i < finalData.length; i += batchSize) {
-    //     const batch = finalData.slice(i, i + batchSize);
-    //     bulkOperations.push({
-    //       insertMany: { documents: batch },
-    //     });
-    //   }
-
-    //   // Execute bulk write operations
-    //   await Promise.all(
-    //     bulkOperations.map(async (operation) => {
-    //       try {
-    //         const result = await equityModel.insertMany([operation]);
-    //         console.log(`Bulk write result: ${result}`);
-    //       } catch (error) {
-    //         console.error("Error in bulk write:", error);
-    //       }
-    //     })
-    //   );
-    // }
-
-    async function processChunk(chunk) {
-      const finalData = [];
-      const headers = chunk.shift().split("|"); // Remove and process the headers
-
-      for (let i = 0; i < chunk.length; i++) {
-        const data = chunk[i].split("|");
-        const obj = {};
-        for (let j = 0; j < headers.length; j++) {
-          obj[headers[j]] = data[j];
-        }
-        finalData.push(obj);
-      }
-
-      // Execute bulk write operations
-      try {
-        const result = await equityModel.insertMany(finalData);
-        console.log(`Bulk write result: ${result}`);
-      } catch (error) {
-        console.error("Error in bulk write:", error);
-      }
-    }
-    //-----------------------------------------
   } catch (error) {
-    console.error("Error:", error);
-    res.status(500).json({ success: false, message: "An error occurred" });
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: "Something went wrong!!!",
+      error,
+    });
   }
 });
+
+app.get("/situsstreet/:name", async (req, res) => {
+  const name = req.params.name;
+  try {
+    await equityModel.ensureIndexes();
+
+    const data = await equityModel.find({ SitusStreet: name }).lean();
+
+    res.status(200).json({
+      success: true,
+      message: "Data fechted successfully ♪..♫..♪..♫",
+      data,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: "Something went wrong!!!",
+      error,
+    });
+  }
+});
+
+// ================ New Efficient Method ===========================
+app.get("/eff-insert", async (req, res) => {
+  try {
+    const fileStream = fs.createReadStream("./data/20240129_Equity_Sample.txt");
+    const rl = readline.createInterface({
+      input: fileStream,
+    });
+
+    let batch = [];
+    let headers = [];
+
+    let batchCount = 0;
+    for await (const line of rl) {
+      if (headers.length === 0) {
+        headers = line.split("|");
+      } else {
+        const lineArr = line.split("|");
+        const obj = {};
+        for (let i = 0; i < headers.length; i++) {
+          // @ts-ignore
+          obj[headers[i]] = lineArr[i];
+        }
+
+        batch.push(obj);
+
+        // Insert batch into MongoDB in chunks of 1000 documents
+        if (batch.length >= 100000) {
+          await equityModel.insertMany(batch);
+          batchCount++;
+          batch = [];
+          // if (batchCount === 2000) {
+          //   return res.status(201).json({
+          //     success: true,
+          //     message: "1M  Data inserted Successfully ♪..♫.♫..♫..♪s",
+          //   });
+          // }
+        }
+      }
+    }
+
+    // Insert remaining documents
+    if (batch.length > 0) {
+      await equityModel.insertMany(batch);
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `${
+        batchCount * 1000 + batch.length
+      } Data inserted Successfully ♫.♫..♫..♪`,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: "Data not inserted !!!",
+      error,
+    });
+  }
+});
+
+// =============== find by name ============================
+app.get("/find-data", async (req, res) => {
+  try {
+    const fileStream = fs.createReadStream("./data/20240129_Equity_Sample.txt");
+    const rl = readline.createInterface({
+      input: fileStream,
+    });
+
+    let headers = [];
+
+    for await (const line of rl) {
+      if (headers.length === 0) {
+        headers = line.split("|");
+      } else {
+        const lineArr = line.split("|");
+        const obj: any = {};
+        for (let i = 0; i < headers.length; i++) {
+          // @ts-ignore
+          obj[headers[i]] = lineArr[i];
+        }
+        if (obj["PropertyID"] === "19084352") {
+          return res.status(200).json({
+            success: true,
+            message: ` Data found Successfully ♫.♫..♫..♪`,
+            data: obj,
+          });
+        }
+      }
+    }
+
+    res.status(200).json({
+      success: true,
+      message: ` Data not found  ♫.♫..♫..♪`,
+      data: null,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: "Data not found !!!",
+      error,
+    });
+  }
+});
+
+app.get("/find-data-with-db", async (req, res) => {
+  try {
+    const data = await equityModel.find({ PropertyID: "19084352" });
+
+    return res.status(200).json({
+      success: true,
+      message: ` Data found Successfully ♫.♫..♫..♪`,
+      data,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: "Data not found !!!",
+      error,
+    });
+  }
+});
+
+// =============== Text to json ============================
+app.get("/text-to-json", async (req, res) => {
+  try {
+    const fileStream = fs.createReadStream("./data/20240129_Equity_Sample.txt");
+    const rl = readline.createInterface({
+      input: fileStream,
+    });
+    const writeStream = fs.createWriteStream("./parseData/equity_sample.json");
+
+    // const jsonArray = [];
+    let headers = [];
+
+    for await (const line of rl) {
+      if (headers.length === 0) {
+        headers = line.split("|");
+      } else {
+        const lineArr = line.split("|");
+        const obj: any = {};
+        for (let i = 0; i < headers.length; i++) {
+          // @ts-ignore
+          obj[headers[i]] = lineArr[i];
+        }
+        // jsonArray.push(obj);
+        writeStream.write(JSON.stringify(obj) + "\n", (err) => {
+          if (err) {
+            console.error("Error writing to the file:", err);
+          }
+        });
+      }
+    }
+
+    writeStream.end();
+    // writeStream.write(JSON.stringify(jsonArray), (err) => {
+    //   if (err) {
+    //     console.error("Error writing to the file:", err);
+    //   } else {
+    //     console.log("JSON file has been created successfully.");
+    //   }
+    // });
+
+    res.status(200).json({
+      success: true,
+      message: `Data parsed and write successfully  ♫.♫..♫..♪`,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: "Data could not parsed !!!",
+      error,
+    });
+  }
+});
+
+app.get("/get-json", (req, res) => {
+  fs.readFile("./parseData/equity_sample.json", "utf-8", (err, data) => {
+    if (err) {
+      console.log(err);
+      res.status(500).json({
+        success: false,
+        message: "Data could not read !!!",
+        err,
+      });
+    }
+    res.status(200).json({
+      success: true,
+      message: `Data read  successfully  ♫.♫..♫..♪`,
+      data: data,
+    });
+  });
+});
+
+// ===========================================
 
 app.listen(3001, () => {
   console.log(`server is running at port : 3001`);
