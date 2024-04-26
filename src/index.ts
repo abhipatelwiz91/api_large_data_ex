@@ -222,6 +222,54 @@ app.get("/find-data", async (req, res) => {
   }
 });
 
+// =============== find by property eff ============================
+app.get("/find-data-eff", async (req, res) => {
+  const PropertyID = req.query.PropertyID;
+  try {
+    const fileStream = fs.createReadStream("./data/20240129_Equity_Sample.txt");
+    const rl = readline.createInterface({
+      input: fileStream,
+    });
+
+    let headers = [];
+    const data: any[] = [];
+
+    for await (const line of rl) {
+      if (headers.length === 0) {
+        headers = line.split("|");
+      } else {
+        const lineArr = line.split("|");
+
+        if (lineArr[1] === PropertyID) {
+          const obj: any = {};
+          for (let i = 0; i < headers.length; i++) {
+            // @ts-ignore
+            obj[headers[i]] = lineArr[i];
+          }
+          data.push(obj);
+          return res.status(200).json({
+            success: true,
+            message: ` Data found Successfully ♫.♫..♫..♪`,
+            data,
+          });
+        }
+      }
+    }
+    return res.status(200).json({
+      success: true,
+      message: ` Data found Successfully ♫.♫..♫..♪`,
+      data,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      message: "Data not found !!!",
+      error,
+    });
+  }
+});
+
 app.get("/find-data-with-db", async (req, res) => {
   try {
     const data = await equityModel.find({ PropertyID: "19084352" });
